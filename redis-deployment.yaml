@@ -3,24 +3,24 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    run: flask-app
-  name: flask-app
+    run: redis
+  name: redis
 spec:
   replicas: 1
   selector:
     matchLabels:
-      run: flask-app
+      run: redis
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        run: flask-app
+        run: redis
     spec:
       containers:
-      - image: mjbright/flask-web:v1
-        name: flask-app
+      - image: redis:latest
+        name: redis
         ports:
-        - containerPort: 5000
+        - containerPort: 6379
         resources: {}
 status: {}
