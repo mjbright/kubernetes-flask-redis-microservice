@@ -132,7 +132,10 @@ ACCESS() {
     [ -z "$IP" ] && die "Failed to get IP for minikube"
 
     URL="$IP:$PORT"
-    CMD="curl 'http://${URL}/?start=23&stop=31'"
+    # NOTE: this is just reusing the root object
+    #       start,stop args are ignored
+    #       curl 'http://${URL}/?start=23&stop=31'
+    CMD="curl 'http://${URL}/"
 
     press "About to run: <$CMD>"
 
