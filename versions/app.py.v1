@@ -5,9 +5,14 @@ import socket
 from redis import Redis
 from flask import Flask, request, Response, stream_with_context, jsonify
 
+print("==[START]== Env variables =====================")
+for name, value in os.environ.items():
+    print("{0}: {1}".format(name, value))
+print("==[END  ]== Env variables =====================")
+
 app = Flask(__name__)
 db = Redis( host = os.getenv( 'REDIS', 'redis'),
-            port = int(os.getenv( 'REDIS_PORT', '6379' ) ) )
+            port = int(os.getenv( 'REDIS_SERVICE_PORT', '6379' ) ) )
 
 @app.route('/')
 def hello():
