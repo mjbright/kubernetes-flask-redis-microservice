@@ -2,6 +2,7 @@
 
 cd $( dirname $0 )
 
+QUICK_BUILD=0
 PROMPTS=0
 D_USER=mjbright
 ##D_IMAGE=${D_USER}/dronestore:0.1
@@ -38,16 +39,12 @@ while [ $# -gt 0 ]; do
         --nocache) BUILD_ARGS+=" --no-cache";;
         -push)     HUB_PUSH=1;;
 
+        -q)        QUICK_BUILD=1;;
+
         *) die "Unknown option <$1>";;
     esac
     shift
 done
-
-[ $HUB_PUSH -ne 0 ] && {
-    CMD="docker login -u ${D_USER}"
-    echo "-- $CMD"
-    $CMD || die "Failed to login"
-}
 
 ## -- Main: ---------------------------------------------------------------
 
@@ -64,16 +61,21 @@ which docker 2>/dev/null && {
 
 echo "Using $BUILDER to build images"
 
+[ $HUB_PUSH -ne 0 ] && {
+    CMD="$BUILDER login -u ${D_USER}"
+    echo "-- $CMD"
+    $CMD || die "Failed to login"
+}
+
 ARCH=$( uname -m )
 
 case $ARCH in
+     x86_64) export TARGETARCH=amd64;;
       amd64) export TARGETARCH=amd64;;
       arm64) export TARGETARCH=arm64;;
     aarch64) export TARGETARCH=arm64;;
           *) die "Unknown architecture $ARCH"
 esac
-
-=============
 
 START0=$SECONDS
 for version in $VERSIONS; do
@@ -93,21 +95,23 @@ for version in $VERSIONS; do
     }
 
     ## -- Arch: ---------------------------------------------------------------
-    echo
-    PRESS "Building $D_IMAGE for multiple architectures"
-    # See:
-    # - https://www.docker.com/blog/how-to-rapidly-build-multi-architecture-images-with-buildx/
-    docker buildx ls
-    docker buildx create --name multi-builder --use --bootstrap
-    docker buildx ls
+    if [ $QUICK_BUILD -eq 0 ]; then
+        echo
+        PRESS "Building $D_IMAGE for multiple architectures"
+        # See:
+        # - https://www.docker.com/blog/how-to-rapidly-build-multi-architecture-images-with-buildx/
+        docker buildx ls
+        docker buildx create --name multi-builder --use --bootstrap
+        docker buildx ls
 
-    # Now, you’ll jumpstart your multi-architecture build with the single docker buildx command shown below:
+        # Now, you’ll jumpstart your multi-architecture build with the single docker buildx command shown below:
 
-    docker buildx build --push --progress plain --platform linux/amd64,linux/arm64 -t ${D_IMAGE} .
-    END=$SECONDS
+        docker buildx build --push --progress plain --platform linux/amd64,linux/arm64 -t ${D_IMAGE} .
+     fi
+     END=$SECONDS
 
-    let TOOK=END-START
-    echo "[TOOK $TOOK secs] Build of $D_IMAGE"
+     let TOOK=END-START
+     echo "[TOOK $TOOK secs] Build of $D_IMAGE"
 done
 
 let TOOK=END-START0
